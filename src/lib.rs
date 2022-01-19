@@ -1,17 +1,17 @@
 // Copyright 2016 John Ward under MIT
 
-use std::f64::consts::{FRAC_PI_2};
+use std::f32::consts::{FRAC_PI_2};
 
 macro_rules! easer {
     ($f:ident, $t:ident, $e:expr) => (
         pub struct $t {
-            start: f64,
-            dist: f64,
+            start: f32,
+            dist: f32,
             step: u64,
             steps: u64,
         }
 
-        pub fn $f(start: f64, end: f64, steps: u64) -> $t {
+        pub fn $f(start: f32, end: f32, steps: u64) -> $t {
             $t {
                 start: start,
                 dist: end - start,
@@ -21,82 +21,82 @@ macro_rules! easer {
         }
 
         impl Iterator for $t {
-            type Item = f64;
+            type Item = f32;
 
-            fn next(&mut self) -> Option<f64> {
+            fn next(&mut self) -> Option<f32> {
                 self.step += 1;
                 if self.step > self.steps {
                     None
                 } else {
-                    let x = self.step as f64 / self.steps as f64;
+                    let x = self.step as f32 / self.steps as f32;
                     Some($e(x).mul_add(self.dist, self.start))
                 }
             }
         }
-    )
+        )
 }
 
-easer!(linear, Linear, |x:f64| {
+easer!(linear, Linear, |x:f32| {
     x
 });
-easer!(quad_in, QuadIn, |x:f64| {
+easer!(quad_in, QuadIn, |x:f32| {
     x * x
 });
-easer!(quad_out, QuadOut, |x:f64| {
+easer!(quad_out, QuadOut, |x:f32| {
     -(x * (x - 2.))
 });
-easer!(quad_inout, QuadInOut, |x:f64| {
+easer!(quad_inout, QuadInOut, |x:f32| {
     if x < 0.5 { 2. * x * x }
     else { (-2. * x * x) + x.mul_add(4., -1.) }
 });
-easer!(cubic_in, CubicIn, |x:f64| {
+easer!(cubic_in, CubicIn, |x:f32| {
     x * x * x
 });
-easer!(cubic_out, CubicOut, |x:f64| {
+easer!(cubic_out, CubicOut, |x:f32| {
     let y = x - 1.;
     y * y * y + 1.
 });
-easer!(cubic_inout, CubicInOut, |x:f64| {
+easer!(cubic_inout, CubicInOut, |x:f32| {
     if x < 0.5 { 4. * x * x * x }
     else {
         let y = x.mul_add(2., -2.);
         (y * y * y).mul_add(0.5, 1.)
     }
 });
-easer!(quartic_in, QuarticIn, |x:f64| {
+easer!(quartic_in, QuarticIn, |x:f32| {
     x * x * x * x
 });
-easer!(quartic_out, QuarticOut, |x:f64| {
+easer!(quartic_out, QuarticOut, |x:f32| {
     let y = x - 1.;
     (y * y * y).mul_add(1. - x, 1.)
 });
-easer!(quartic_inout, QuarticInOut, |x:f64| {
+easer!(quartic_inout, QuarticInOut, |x:f32| {
     if x < 0.5 { 8. * x * x * x * x }
     else {
         let y = x - 1.;
         (y * y * y * y).mul_add(-8., 1.)
     }
 });
-easer!(sin_in, SinIn, |x:f64| {
+easer!(sin_in, SinIn, |x:f32| {
     let y = (x - 1.) * FRAC_PI_2;
     y.sin() + 1.
 });
-easer!(sin_out, SinOut, |x:f64| {
+easer!(sin_out, SinOut, |x:f32| {
     (x * FRAC_PI_2).sin()
 });
-easer!(sin_inout, SinInOut, |x:f64| {
+easer!(sin_inout, SinInOut, |x:f32| {
     if x < 0.5 { 0.5 * (1. - (x * x).mul_add(-4., 1.).sqrt()) }
     else       { 0.5 * ((x.mul_add(-2., 3.) * x.mul_add(2., -1.)).sqrt() + 1.) }
 });
-easer!(exp_in, ExpIn, |x:f64| {
+easer!(exp_in, ExpIn, |x:f32| {
     if x == 0. { 0. }
     else       { (10. * (x - 1.)).exp2() }
 });
-easer!(exp_out, ExpOut, |x:f64| {
+easer!(exp_out, ExpOut, |x:f32| {
     if x == 1. { 1. }
     else       { 1. - (-10. * x).exp2() }
 });
-easer!(exp_inout, ExpInOut, |x:f64| {
+easer!(exp_inout, ExpInOut, |x:f32| {
     if      x == 1. { 1. }
     else if x == 0. { 0. }
     else if x < 0.5 { x.mul_add(20., -10.).exp2() * 0.5 }
@@ -111,7 +111,7 @@ mod test {
     // We can't use the exact value because of floating point
     // problems (13 != 12.999999999999999), and five decimal
     // points of precision is fine for this.
-    fn round_5(x: f64) -> f64 {
+    fn round_5(x: f32) -> f32 {
         (x * 10E+5).round() / 10E+5
     }
 
@@ -129,7 +129,7 @@ mod test {
             0.9,
             1.0,
         ];
-        let try: Vec<f64> = linear(0f64, 1f64, 10).collect();
+        let try: Vec<f32> = linear(0f32, 1f32, 10).collect();
         assert_eq!(try, model);
     }
 
@@ -147,7 +147,7 @@ mod test {
             8100.,
             10000.,
         ];
-        let try: Vec<f64> = quad_in(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = quad_in(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -165,7 +165,7 @@ mod test {
             9900.,
             10000.,
         ];
-        let try: Vec<f64> = quad_out(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = quad_out(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -183,7 +183,7 @@ mod test {
             9800.,
             10000.,
         ];
-        let try: Vec<f64> = quad_inout(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = quad_inout(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -201,7 +201,7 @@ mod test {
             7290.,
             10000.,
         ];
-        let try: Vec<f64> = cubic_in(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = cubic_in(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -219,7 +219,7 @@ mod test {
             9990.,
             10000.,
         ];
-        let try: Vec<f64> = cubic_out(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = cubic_out(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -237,7 +237,7 @@ mod test {
             6561.,
             10000.,
         ];
-        let try: Vec<f64> = quartic_in(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = quartic_in(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -255,7 +255,7 @@ mod test {
             9999.,
             10000.,
         ];
-        let try: Vec<f64> = quartic_out(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = quartic_out(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -273,7 +273,7 @@ mod test {
             9992.,
             10000.,
         ];
-        let try: Vec<f64> = quartic_inout(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = quartic_inout(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -291,7 +291,7 @@ mod test {
             8435.655350,
             10000.,
         ];
-        let try: Vec<f64> = sin_in(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = sin_in(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -309,7 +309,7 @@ mod test {
             9876.883406,
             10000.
         ];
-        let try: Vec<f64> = sin_out(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = sin_out(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -327,7 +327,7 @@ mod test {
             9898.979486,
             10000.
         ];
-        let try: Vec<f64> = sin_inout(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = sin_inout(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -345,7 +345,7 @@ mod test {
             5000.,
             10000.
         ];
-        let try: Vec<f64> = exp_in(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = exp_in(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -363,7 +363,7 @@ mod test {
             9980.46875,
             10000.
         ];
-        let try: Vec<f64> = exp_out(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = exp_out(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 
@@ -381,7 +381,7 @@ mod test {
             9980.46875,
             10000.
         ];
-        let try: Vec<f64> = exp_inout(0f64, 10000f64, 10).map(round_5).collect();
+        let try: Vec<f32> = exp_inout(0f32, 10000f32, 10).map(round_5).collect();
         assert_eq!(try, model);
     }
 }
