@@ -27,13 +27,13 @@ macro_rules! easer {
 
         impl<
                 $ty: Float + FromPrimitive + FloatConst,
-                $s: Num + FromPrimitive + ToPrimitive + NumAssignOps + PartialOrd + Copy,
+                $s: Num + ToPrimitive + NumAssignOps + PartialOrd + Copy,
             > Iterator for $t<$ty, $s>
         {
             type Item = $ty;
 
             fn next(&mut self) -> Option<$ty> {
-                self.step += S::one();
+                self.step += $s::one();
                 if self.step > self.steps {
                     None
                 } else {
