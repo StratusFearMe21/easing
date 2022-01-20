@@ -1,387 +1,134 @@
 // Copyright 2016 John Ward under MIT
 
-use std::f32::consts::{FRAC_PI_2};
+use num_traits::{Float, FloatConst, FromPrimitive, Num, NumAssignOps, ToPrimitive};
 
 macro_rules! easer {
-    ($f:ident, $t:ident, $e:expr) => (
-        pub struct $t {
-            start: f32,
-            dist: f32,
-            step: u64,
-            steps: u64,
+    ($ty:tt, $s:tt, $f:ident, $t:ident, $e:expr) => {
+        pub struct $t<$ty: Float + FromPrimitive + FloatConst, $s: Num + ToPrimitive + NumAssignOps + PartialOrd + Copy>
+        {
+            start: $ty,
+            dist: $ty,
+            step: $s,
+            steps: $s,
         }
 
-        pub fn $f(start: f32, end: f32, steps: u64) -> $t {
+        pub fn $f<$ty: Float + FromPrimitive + FloatConst, $s: Num + ToPrimitive + NumAssignOps + PartialOrd + Copy>(
+            start: $ty,
+            end: $ty,
+            steps: $s,
+        ) -> $t<$ty, $s> {
             $t {
                 start: start,
                 dist: end - start,
-                step: 0,
+                step: $s::zero(),
                 steps: steps,
             }
         }
 
-        impl Iterator for $t {
-            type Item = f32;
+        impl<
+                $ty: Float + FromPrimitive + FloatConst,
+                $s: Num + FromPrimitive + ToPrimitive + NumAssignOps + PartialOrd + Copy,
+            > Iterator for $t<$ty, $s>
+        {
+            type Item = $ty;
 
-            fn next(&mut self) -> Option<f32> {
-                self.step += 1;
+            fn next(&mut self) -> Option<$ty> {
+                self.step += S::one();
                 if self.step > self.steps {
                     None
                 } else {
-                    let x = self.step as f32 / self.steps as f32;
+                    let x = $ty::from(self.step).unwrap() / $ty::from(self.steps).unwrap();
                     Some($e(x).mul_add(self.dist, self.start))
                 }
             }
         }
-        )
+    };
 }
 
-easer!(linear, Linear, |x:f32| {
-    x
+easer!(T, S, linear, Linear, |x: T| { x });
+easer!(T, S, quad_in, QuadIn, |x: T| { x * x });
+easer!(T, S, quad_out, QuadOut, |x: T| {
+    -(x * (x - T::from(2.).unwrap()))
 });
-easer!(quad_in, QuadIn, |x:f32| {
-    x * x
-});
-easer!(quad_out, QuadOut, |x:f32| {
-    -(x * (x - 2.))
-});
-easer!(quad_inout, QuadInOut, |x:f32| {
-    if x < 0.5 { 2. * x * x }
-    else { (-2. * x * x) + x.mul_add(4., -1.) }
-});
-easer!(cubic_in, CubicIn, |x:f32| {
-    x * x * x
-});
-easer!(cubic_out, CubicOut, |x:f32| {
-    let y = x - 1.;
-    y * y * y + 1.
-});
-easer!(cubic_inout, CubicInOut, |x:f32| {
-    if x < 0.5 { 4. * x * x * x }
-    else {
-        let y = x.mul_add(2., -2.);
-        (y * y * y).mul_add(0.5, 1.)
+easer!(T, S, quad_inout, QuadInOut, |x: T| {
+    if x < T::from(0.5).unwrap() {
+        T::from(2.).unwrap() * x * x
+    } else {
+        (T::from(-2.).unwrap() * x * x) + x.mul_add(T::from(4.).unwrap(), T::from(-1.).unwrap())
     }
 });
-easer!(quartic_in, QuarticIn, |x:f32| {
-    x * x * x * x
+easer!(T, S, cubic_in, CubicIn, |x: T| { x * x * x });
+easer!(T, S, cubic_out, CubicOut, |x: T| {
+    let y = x - T::from(1.).unwrap();
+    y * y * y + T::from(1.).unwrap()
 });
-easer!(quartic_out, QuarticOut, |x:f32| {
-    let y = x - 1.;
-    (y * y * y).mul_add(1. - x, 1.)
-});
-easer!(quartic_inout, QuarticInOut, |x:f32| {
-    if x < 0.5 { 8. * x * x * x * x }
-    else {
-        let y = x - 1.;
-        (y * y * y * y).mul_add(-8., 1.)
+easer!(T, S, cubic_inout, CubicInOut, |x: T| {
+    if x < T::from(0.5).unwrap() {
+        T::from(4.).unwrap() * x * x * x
+    } else {
+        let y = x.mul_add(T::from(2.).unwrap(), T::from(-2.).unwrap());
+        (y * y * y).mul_add(T::from(0.5).unwrap(), T::from(1.).unwrap())
     }
 });
-easer!(sin_in, SinIn, |x:f32| {
-    let y = (x - 1.) * FRAC_PI_2;
-    y.sin() + 1.
+easer!(T, S, quartic_in, QuarticIn, |x: T| { x * x * x * x });
+easer!(T, S, quartic_out, QuarticOut, |x: T| {
+    let y = x - T::from(1.).unwrap();
+    (y * y * y).mul_add(T::from(1.).unwrap() - x, T::from(1.).unwrap())
 });
-easer!(sin_out, SinOut, |x:f32| {
-    (x * FRAC_PI_2).sin()
+easer!(T, S, quartic_inout, QuarticInOut, |x: T| {
+    if x < T::from(0.5).unwrap() {
+        T::from(8.).unwrap() * x * x * x * x
+    } else {
+        let y = x - T::from(1.).unwrap();
+        (y * y * y * y).mul_add(T::from(-8.).unwrap(), T::from(1.).unwrap())
+    }
 });
-easer!(sin_inout, SinInOut, |x:f32| {
-    if x < 0.5 { 0.5 * (1. - (x * x).mul_add(-4., 1.).sqrt()) }
-    else       { 0.5 * ((x.mul_add(-2., 3.) * x.mul_add(2., -1.)).sqrt() + 1.) }
+easer!(T, S, sin_in, SinIn, |x: T| {
+    let y = (x - T::from(1.).unwrap()) * T::FRAC_PI_2();
+    y.sin() + T::from(1.).unwrap()
 });
-easer!(exp_in, ExpIn, |x:f32| {
-    if x == 0. { 0. }
-    else       { (10. * (x - 1.)).exp2() }
+easer!(T, S, sin_out, SinOut, |x: T| { (x * T::FRAC_PI_2()).sin() });
+easer!(T, S, sin_inout, SinInOut, |x: T| {
+    if x < T::from(0.5).unwrap() {
+        T::from(0.5).unwrap()
+            * (T::from(1.).unwrap()
+                - (x * x)
+                    .mul_add(T::from(-4.).unwrap(), T::from(1.).unwrap())
+                    .sqrt())
+    } else {
+        T::from(0.5).unwrap()
+            * ((x.mul_add(T::from(-2.).unwrap(), T::from(3.).unwrap())
+                * x.mul_add(T::from(2.).unwrap(), T::from(-1.).unwrap()))
+            .sqrt()
+                + T::from(1.).unwrap())
+    }
 });
-easer!(exp_out, ExpOut, |x:f32| {
-    if x == 1. { 1. }
-    else       { 1. - (-10. * x).exp2() }
+easer!(T, S, exp_in, ExpIn, |x: T| {
+    if x == T::from(0.).unwrap() {
+        T::from(0.).unwrap()
+    } else {
+        (T::from(10.).unwrap() * (x - T::from(1.).unwrap())).exp2()
+    }
 });
-easer!(exp_inout, ExpInOut, |x:f32| {
-    if      x == 1. { 1. }
-    else if x == 0. { 0. }
-    else if x < 0.5 { x.mul_add(20., -10.).exp2() * 0.5 }
-    else            { x.mul_add(-20., 10.).exp2().mul_add(-0.5, 1.) }
+easer!(T, S, exp_out, ExpOut, |x: T| {
+    if x == T::from(1.).unwrap() {
+        T::from(1.).unwrap()
+    } else {
+        T::from(1.).unwrap() - (T::from(-10.).unwrap() * x).exp2()
+    }
 });
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    // Rounds a float to five places after the decimal.
-    // We can't use the exact value because of floating point
-    // problems (13 != 12.999999999999999), and five decimal
-    // points of precision is fine for this.
-    fn round_5(x: f32) -> f32 {
-        (x * 10E+5).round() / 10E+5
+easer!(T, S, exp_inout, ExpInOut, |x: T| {
+    if x == T::from(1.).unwrap() {
+        T::from(1.).unwrap()
+    } else if x == T::from(0.).unwrap() {
+        T::from(0.).unwrap()
+    } else if x < T::from(0.5).unwrap() {
+        x.mul_add(T::from(20.).unwrap(), T::from(-10.).unwrap())
+            .exp2()
+            * T::from(0.5).unwrap()
+    } else {
+        x.mul_add(T::from(-20.).unwrap(), T::from(10.).unwrap())
+            .exp2()
+            .mul_add(T::from(-0.5).unwrap(), T::from(1.).unwrap())
     }
-
-    #[test]
-    fn linear_test() {
-        let model = vec![
-            0.1,
-            0.2,
-            0.3,
-            0.4,
-            0.5,
-            0.6,
-            0.7,
-            0.8,
-            0.9,
-            1.0,
-        ];
-        let try: Vec<f32> = linear(0f32, 1f32, 10).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn quad_in_test() {
-        let model = vec![
-            100.,
-            400.,
-            900.,
-            1600.,
-            2500.,
-            3600.,
-            4900.,
-            6400.,
-            8100.,
-            10000.,
-        ];
-        let try: Vec<f32> = quad_in(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn quad_out_test() {
-        let model = vec![
-            1900.,
-            3600.,
-            5100.,
-            6400.,
-            7500.,
-            8400.,
-            9100.,
-            9600.,
-            9900.,
-            10000.,
-        ];
-        let try: Vec<f32> = quad_out(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn quad_inout_test() {
-        let model = vec![
-            200.,
-            800.,
-            1800.,
-            3200.,
-            5000.,
-            6800.,
-            8200.,
-            9200.,
-            9800.,
-            10000.,
-        ];
-        let try: Vec<f32> = quad_inout(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn cubic_in_test() {
-        let model = vec![
-            10.,
-            80.,
-            270.,
-            640.,
-            1250.,
-            2160.,
-            3430.,
-            5120.,
-            7290.,
-            10000.,
-        ];
-        let try: Vec<f32> = cubic_in(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn cubic_out_test() {
-        let model = vec![
-            2710.,
-            4880.,
-            6570.,
-            7840.,
-            8750.,
-            9360.,
-            9730.,
-            9920.,
-            9990.,
-            10000.,
-        ];
-        let try: Vec<f32> = cubic_out(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn quartic_in_test() {
-        let model = vec![
-            1.,
-            16.,
-            81.,
-            256.,
-            625.,
-            1296.,
-            2401.,
-            4096.,
-            6561.,
-            10000.,
-        ];
-        let try: Vec<f32> = quartic_in(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn quartic_out_test() {
-        let model = vec![
-            3439.,
-            5904.,
-            7599.,
-            8704.,
-            9375.,
-            9744.,
-            9919.,
-            9984.,
-            9999.,
-            10000.,
-        ];
-        let try: Vec<f32> = quartic_out(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn quartic_inout_test() {
-        let model = vec![
-            8.,
-            128.,
-            648.,
-            2048.,
-            5000.,
-            7952.,
-            9352.,
-            9872.,
-            9992.,
-            10000.,
-        ];
-        let try: Vec<f32> = quartic_inout(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn sin_in_test() {
-        let model = vec![
-            123.116594,
-            489.434837,
-            1089.934758,
-            1909.830056,
-            2928.932188,
-            4122.147477,
-            5460.095003,
-            6909.830056,
-            8435.655350,
-            10000.,
-        ];
-        let try: Vec<f32> = sin_in(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn sin_out_test() {
-        let model = vec![
-            1564.344650,
-            3090.169944,
-            4539.904997,
-            5877.852523,
-            7071.067812,
-            8090.169944,
-            8910.065242,
-            9510.565163,
-            9876.883406,
-            10000.
-        ];
-        let try: Vec<f32> = sin_out(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn sin_inout_test() {
-        let model = vec![
-            101.020514,
-            417.424305,
-            1000.,
-            2000.,
-            5000.,
-            8000.,
-            9000.,
-            9582.575695,
-            9898.979486,
-            10000.
-        ];
-        let try: Vec<f32> = sin_inout(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn exp_in_test() {
-        let model = vec![
-            19.53125,
-            39.0625,
-            78.125,
-            156.25,
-            312.5,
-            625.,
-            1250.,
-            2500.,
-            5000.,
-            10000.
-        ];
-        let try: Vec<f32> = exp_in(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn exp_out_test() {
-        let model = vec![
-            5000.,
-            7500.,
-            8750.,
-            9375.,
-            9687.5,
-            9843.75,
-            9921.875,
-            9960.9375,
-            9980.46875,
-            10000.
-        ];
-        let try: Vec<f32> = exp_out(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-
-    #[test]
-    fn exp_inout_test() {
-        let model = vec![
-            19.53125,
-            78.125,
-            312.5,
-            1250.,
-            5000.,
-            8750.,
-            9687.5,
-            9921.875,
-            9980.46875,
-            10000.
-        ];
-        let try: Vec<f32> = exp_inout(0f32, 10000f32, 10).map(round_5).collect();
-        assert_eq!(try, model);
-    }
-}
+});
