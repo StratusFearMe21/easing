@@ -59,69 +59,65 @@ easer!(T, S, quad_inout, QuadInOut, |x: T| {
 });
 easer!(T, S, cubic_in, CubicIn, |x: T| { x * x * x });
 easer!(T, S, cubic_out, CubicOut, |x: T| {
-    let y = x - T::from(1.).unwrap();
-    y * y * y + T::from(1.).unwrap()
+    let y = x - T::one();
+    y * y * y + T::one()
 });
 easer!(T, S, cubic_inout, CubicInOut, |x: T| {
     if x < T::from(0.5).unwrap() {
         T::from(4.).unwrap() * x * x * x
     } else {
         let y = x.mul_add(T::from(2.).unwrap(), T::from(-2.).unwrap());
-        (y * y * y).mul_add(T::from(0.5).unwrap(), T::from(1.).unwrap())
+        (y * y * y).mul_add(T::from(0.5).unwrap(), T::one())
     }
 });
 easer!(T, S, quartic_in, QuarticIn, |x: T| { x * x * x * x });
 easer!(T, S, quartic_out, QuarticOut, |x: T| {
-    let y = x - T::from(1.).unwrap();
-    (y * y * y).mul_add(T::from(1.).unwrap() - x, T::from(1.).unwrap())
+    let y = x - T::one();
+    (y * y * y).mul_add(T::one() - x, T::one())
 });
 easer!(T, S, quartic_inout, QuarticInOut, |x: T| {
     if x < T::from(0.5).unwrap() {
         T::from(8.).unwrap() * x * x * x * x
     } else {
-        let y = x - T::from(1.).unwrap();
-        (y * y * y * y).mul_add(T::from(-8.).unwrap(), T::from(1.).unwrap())
+        let y = x - T::one();
+        (y * y * y * y).mul_add(T::from(-8.).unwrap(), T::one())
     }
 });
 easer!(T, S, sin_in, SinIn, |x: T| {
-    let y = (x - T::from(1.).unwrap()) * T::FRAC_PI_2();
-    y.sin() + T::from(1.).unwrap()
+    let y = (x - T::one()) * T::FRAC_PI_2();
+    y.sin() + T::one()
 });
 easer!(T, S, sin_out, SinOut, |x: T| { (x * T::FRAC_PI_2()).sin() });
 easer!(T, S, sin_inout, SinInOut, |x: T| {
     if x < T::from(0.5).unwrap() {
-        T::from(0.5).unwrap()
-            * (T::from(1.).unwrap()
-                - (x * x)
-                    .mul_add(T::from(-4.).unwrap(), T::from(1.).unwrap())
-                    .sqrt())
+        T::from(0.5).unwrap() * (T::one() - (x * x).mul_add(T::from(-4.).unwrap(), T::one()).sqrt())
     } else {
         T::from(0.5).unwrap()
             * ((x.mul_add(T::from(-2.).unwrap(), T::from(3.).unwrap())
                 * x.mul_add(T::from(2.).unwrap(), T::from(-1.).unwrap()))
             .sqrt()
-                + T::from(1.).unwrap())
+                + T::one())
     }
 });
 easer!(T, S, exp_in, ExpIn, |x: T| {
-    if x == T::from(0.).unwrap() {
-        T::from(0.).unwrap()
+    if x == T::zero() {
+        T::zero()
     } else {
-        (T::from(10.).unwrap() * (x - T::from(1.).unwrap())).exp2()
+        (T::from(10.).unwrap() * (x - T::one())).exp2()
     }
 });
 easer!(T, S, exp_out, ExpOut, |x: T| {
-    if x == T::from(1.).unwrap() {
-        T::from(1.).unwrap()
+    if x == T::one() {
+        T::one()
     } else {
-        T::from(1.).unwrap() - (T::from(-10.).unwrap() * x).exp2()
+        T::one() - (T::from(-10.).unwrap() * x).exp2()
     }
 });
 easer!(T, S, exp_inout, ExpInOut, |x: T| {
-    if x == T::from(1.).unwrap() {
-        T::from(1.).unwrap()
-    } else if x == T::from(0.).unwrap() {
-        T::from(0.).unwrap()
+    if x == T::one() {
+        T::one()
+    } else if x == T::zero() {
+        T::zero()
     } else if x < T::from(0.5).unwrap() {
         x.mul_add(T::from(20.).unwrap(), T::from(-10.).unwrap())
             .exp2()
@@ -129,6 +125,6 @@ easer!(T, S, exp_inout, ExpInOut, |x: T| {
     } else {
         x.mul_add(T::from(-20.).unwrap(), T::from(10.).unwrap())
             .exp2()
-            .mul_add(T::from(-0.5).unwrap(), T::from(1.).unwrap())
+            .mul_add(T::from(-0.5).unwrap(), T::one())
     }
 });
