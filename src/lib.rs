@@ -100,23 +100,23 @@ easer!(T, S, sin_inout, SinInOut, |x: T| {
     }
 });
 easer!(T, S, exp_in, ExpIn, |x: T| {
-    if x == T::zero() {
+    if x.is_zero() {
         T::zero()
     } else {
         (T::from(10.).unwrap() * (x - T::one())).exp2()
     }
 });
 easer!(T, S, exp_out, ExpOut, |x: T| {
-    if x == T::one() {
+    if x.is_one() {
         T::one()
     } else {
         T::one() - (T::from(-10.).unwrap() * x).exp2()
     }
 });
 easer!(T, S, exp_inout, ExpInOut, |x: T| {
-    if x == T::one() {
+    if x.is_one() {
         T::one()
-    } else if x == T::zero() {
+    } else if x.is_zero() {
         T::zero()
     } else if x < T::from(0.5).unwrap() {
         x.mul_add(T::from(20.).unwrap(), T::from(-10.).unwrap())
