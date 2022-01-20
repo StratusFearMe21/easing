@@ -1,10 +1,10 @@
 // Copyright 2016 John Ward under MIT
 
-use num_traits::{Float, FloatConst, FromPrimitive, Num, NumAssignOps, ToPrimitive};
+use num_traits::{Float, FloatConst, FromPrimitive, NumAssignOps, One, ToPrimitive, Zero};
 
 macro_rules! easer {
     ($ty:tt, $s:tt, $f:ident, $t:ident, $e:expr) => {
-        pub struct $t<$ty: Float + FromPrimitive + FloatConst, $s: Num + ToPrimitive + NumAssignOps + PartialOrd + Copy>
+        pub struct $t<$ty: Float + FromPrimitive + FloatConst, $s: ToPrimitive + One + Zero + NumAssignOps + PartialOrd + Copy>
         {
             start: $ty,
             dist: $ty,
@@ -12,7 +12,7 @@ macro_rules! easer {
             steps: $s,
         }
 
-        pub fn $f<$ty: Float + FromPrimitive + FloatConst, $s: Num + ToPrimitive + NumAssignOps + PartialOrd + Copy>(
+        pub fn $f<$ty: Float + FromPrimitive + FloatConst, $s: ToPrimitive + One + Zero + NumAssignOps + PartialOrd + Copy>(
             start: $ty,
             end: $ty,
             steps: $s,
@@ -27,7 +27,7 @@ macro_rules! easer {
 
         impl<
                 $ty: Float + FromPrimitive + FloatConst,
-                $s: Num + ToPrimitive + NumAssignOps + PartialOrd + Copy,
+                $s: ToPrimitive + One + Zero + NumAssignOps + PartialOrd + Copy,
             > Iterator for $t<$ty, $s>
         {
             type Item = $ty;
@@ -94,7 +94,7 @@ easer!(T, S, sin_inout, SinInOut, |x: T| {
     } else {
         T::from(0.5).unwrap()
             * ((x.mul_add(T::from(-2.).unwrap(), T::from(3.).unwrap())
-                * x.mul_add(T::from(2.).unwrap(), T::from(-1.).unwrap()))
+                * x.mul_add(T::from(2.).unwrap(), -T::one()))
             .sqrt()
                 + T::one())
     }
