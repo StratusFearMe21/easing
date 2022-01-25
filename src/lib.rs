@@ -3,7 +3,7 @@
 use num_traits::{Float, FloatConst, FromPrimitive, NumAssignOps, One, ToPrimitive, Zero};
 
 macro_rules! easer {
-    ($ty:tt, $s:tt, $f:ident, $t:ident, $e:expr) => {
+    ($ty:tt, $s:tt, $f:ident, $g:ident, $t:ident, $e:expr) => {
         pub struct $t<$ty: Float + FromPrimitive + FloatConst, $s: ToPrimitive + One + Zero + NumAssignOps + PartialOrd + Copy>
         {
             start: $ty,
@@ -42,53 +42,104 @@ macro_rules! easer {
                 }
             }
         }
+
+        impl<
+                $ty: Float + FromPrimitive + FloatConst,
+                $s: ToPrimitive + One + Zero + NumAssignOps + PartialOrd + Copy,
+            > $t<$ty, $s> {
+                pub fn get_step(&mut self, step: $s) -> Option<$ty> {
+                    self.step += step;
+                    if self.step > self.steps {
+                        None
+                    } else {
+                        let x = $ty::from(self.step).unwrap() / $ty::from(self.steps).unwrap();
+                        Some($e(x).mul_add(self.dist, self.start))
+                    }
+                }
+            }
+
+        pub fn $g <
+                $ty: Float + FromPrimitive + FloatConst,
+                $s: ToPrimitive + One + Zero + NumAssignOps + PartialOrd + Copy,
+            >(start: $ty, end: $ty, steps: $s, step: $s) -> $ty {
+
+                    let x = $ty::from(step).unwrap() / $ty::from(steps).unwrap();
+                    $e(x).mul_add(start - end, start)
+            }
     };
 }
 
-easer!(T, S, linear, Linear, |x: T| { x });
-easer!(T, S, quad_in, QuadIn, |x: T| { x * x });
-easer!(T, S, quad_out, QuadOut, |x: T| {
+easer!(T, S, linear, get_step_linear, Linear, |x: T| { x });
+easer!(T, S, quad_in, get_step_quad_in, QuadIn, |x: T| { x * x });
+easer!(T, S, quad_out, get_step_quad_out, QuadOut, |x: T| {
     -(x * (x - T::from(2.).unwrap()))
 });
-easer!(T, S, quad_inout, QuadInOut, |x: T| {
+easer!(T, S, quad_inout, get_step_quad_inout, QuadInOut, |x: T| {
     if x < T::from(0.5).unwrap() {
         T::from(2.).unwrap() * x * x
     } else {
-        (T::from(-2.).unwrap() * x * x) + x.mul_add(T::from(4.).unwrap(), T::from(-1.).unwrap())
+        (T::from(-2.).unwrap() * x * x) + x.mul_add(T::from(4.).unwrap(), -T::one())
     }
 });
-easer!(T, S, cubic_in, CubicIn, |x: T| { x * x * x });
-easer!(T, S, cubic_out, CubicOut, |x: T| {
+easer!(T, S, cubic_in, get_step_cubic_in, CubicIn, |x: T| {
+    x * x * x
+});
+easer!(T, S, cubic_out, get_step_cubic_out, CubicOut, |x: T| {
     let y = x - T::one();
     y * y * y + T::one()
 });
-easer!(T, S, cubic_inout, CubicInOut, |x: T| {
-    if x < T::from(0.5).unwrap() {
-        T::from(4.).unwrap() * x * x * x
-    } else {
-        let y = x.mul_add(T::from(2.).unwrap(), T::from(-2.).unwrap());
-        (y * y * y).mul_add(T::from(0.5).unwrap(), T::one())
+easer!(
+    T,
+    S,
+    cubic_inout,
+    get_step_cubic_inout,
+    CubicInOut,
+    |x: T| {
+        if x < T::from(0.5).unwrap() {
+            T::from(4.).unwrap() * x * x * x
+        } else {
+            let y = x.mul_add(T::from(2.).unwrap(), T::from(-2.).unwrap());
+            (y * y * y).mul_add(T::from(0.5).unwrap(), T::one())
+        }
     }
+);
+easer!(T, S, quartic_in, get_step_quartic_in, QuarticIn, |x: T| {
+    x * x * x * x
 });
-easer!(T, S, quartic_in, QuarticIn, |x: T| { x * x * x * x });
-easer!(T, S, quartic_out, QuarticOut, |x: T| {
-    let y = x - T::one();
-    (y * y * y).mul_add(T::one() - x, T::one())
-});
-easer!(T, S, quartic_inout, QuarticInOut, |x: T| {
-    if x < T::from(0.5).unwrap() {
-        T::from(8.).unwrap() * x * x * x * x
-    } else {
+easer!(
+    T,
+    S,
+    quartic_out,
+    get_step_quartic_out,
+    QuarticOut,
+    |x: T| {
         let y = x - T::one();
-        (y * y * y * y).mul_add(T::from(-8.).unwrap(), T::one())
+        (y * y * y).mul_add(T::one() - x, T::one())
     }
-});
-easer!(T, S, sin_in, SinIn, |x: T| {
+);
+easer!(
+    T,
+    S,
+    quartic_inout,
+    get_step_quartic_inout,
+    QuarticInOut,
+    |x: T| {
+        if x < T::from(0.5).unwrap() {
+            T::from(8.).unwrap() * x * x * x * x
+        } else {
+            let y = x - T::one();
+            (y * y * y * y).mul_add(T::from(-8.).unwrap(), T::one())
+        }
+    }
+);
+easer!(T, S, sin_in, get_step_sin_in, SinIn, |x: T| {
     let y = (x - T::one()) * T::FRAC_PI_2();
     y.sin() + T::one()
 });
-easer!(T, S, sin_out, SinOut, |x: T| { (x * T::FRAC_PI_2()).sin() });
-easer!(T, S, sin_inout, SinInOut, |x: T| {
+easer!(T, S, sin_out, get_step_sin_out, SinOut, |x: T| {
+    (x * T::FRAC_PI_2()).sin()
+});
+easer!(T, S, sin_inout, get_step_sin_inout, SinInOut, |x: T| {
     if x < T::from(0.5).unwrap() {
         T::from(0.5).unwrap() * (T::one() - (x * x).mul_add(T::from(-4.).unwrap(), T::one()).sqrt())
     } else {
@@ -99,21 +150,21 @@ easer!(T, S, sin_inout, SinInOut, |x: T| {
                 + T::one())
     }
 });
-easer!(T, S, exp_in, ExpIn, |x: T| {
+easer!(T, S, exp_in, get_step_exp_in, ExpIn, |x: T| {
     if x.is_zero() {
         T::zero()
     } else {
         (T::from(10.).unwrap() * (x - T::one())).exp2()
     }
 });
-easer!(T, S, exp_out, ExpOut, |x: T| {
+easer!(T, S, exp_out, get_step_exp_out, ExpOut, |x: T| {
     if x.is_one() {
         T::one()
     } else {
         T::one() - (T::from(-10.).unwrap() * x).exp2()
     }
 });
-easer!(T, S, exp_inout, ExpInOut, |x: T| {
+easer!(T, S, exp_inout, get_step_exp_inout, ExpInOut, |x: T| {
     if x.is_one() {
         T::one()
     } else if x.is_zero() {
